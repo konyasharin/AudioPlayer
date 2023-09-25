@@ -1,0 +1,19 @@
+{
+    "playlists": [
+        {
+            "name": "123",
+            "songs": [
+                "bibi-babydoll-dj-brunin-xm-automotivo-bibi-fogosa-mp3.mp3",
+                "nullzwei_JESUS_IN_BERLIN.mp3",
+                "Sound_24308.mp3"
+            ]
+        },
+        {
+            "name": "test",
+            "songs": [
+                "Peggy Gou - (It Goes Like) Nanana (Edit) (supermusic.me).mp3"
+            ]
+        }
+    ],
+    "current_playlist": "test"
+}
