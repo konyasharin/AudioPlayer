@@ -58,9 +58,12 @@ class LinkedList:
                     check_elem.next.prev = check_elem.prev
                 print("Элемент успешно удален")
                 return
+    print("Данного элемента не существует")
 
     def insert(self, previous_index, item):
         check_elem = self[previous_index]
+        if len(self) == 1 and previous_index == 0:
+            self.append(item)
         check_elem.next.prev = item
         item.next = check_elem.next
         item.prev = check_elem
@@ -81,7 +84,12 @@ class LinkedList:
         return check_elem
 
     def last(self):
-        return self.end_node.track
+        if len(self) >= 2:
+            return self.end_node
+        elif len(self) == 1:
+            return self.start_node
+        else:
+            return None
 
     def __iter__(self):
         self.current = 0
@@ -92,6 +100,8 @@ class LinkedList:
         node = self._check_none()
         while node:
             count += 1
+            if node == self.start_node and self.end_node is None:
+                break
             node = node.next
             if node == self.end_node and self.start_node is not None and self.end_node is not None:
                 count += 1
@@ -108,23 +118,29 @@ class LinkedList:
     def __getitem__(self, index):
         i = 0
         check_elem = self._check_none()
-        if index >= len(self) or index < 0:
+        if index >= len(self) or index < -len(self):
             print("Вы используете недопустимый индекс!")
             return
         if check_elem is None:
             return
-        while i != index:
-            check_elem = check_elem.next
-            i += 1
+        if index >= 0:
+            while i != index:
+                check_elem = check_elem.next
+                i += 1
+        else:
+            check_elem = self.last()
+            i = -1
+            while i != index:
+                check_elem = check_elem.prev
+                i -= 1
         return check_elem
 
     def __contains__(self, item):
         for i in range(0, len(self)):
-            print(i)
             if self[i] == item:
                 return True
         return False
 
     def __reversed__(self):
-        for i in range(len(self) - 1, 0, -1):
-            yield self[i].track
+        for i in range(-1, -len(self) - 1, -1):
+            yield self[i]

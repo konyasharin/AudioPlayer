@@ -236,6 +236,8 @@ def delete_playlist():
 
 def instruction_edit_order():
     exit_command()
+    stop()
+    lock_play_buttons("disabled")
     list_box.bind("<<ListboxSelect>>", lambda e: edit_order_music())
     tk.Label(frame1, text="Выберите элемент").grid(row=0, column=0, padx=95)
 
@@ -249,8 +251,6 @@ def edit_order_music():
         tk.Button(frame1, text="Опустить вниз", command=music_down).grid(row=2, column=0, padx=35)
         tk.Button(frame1, text="Прекратить изменение пордка песен", command=exit_command).grid(row=1, column=0, padx=35)
         tk.Button(frame1, text="Поднять вверх", command=music_up).grid(row=0, column=0, padx=35)
-        stop()
-        lock_play_buttons("disabled")
         list_box.bind("<<ListboxSelect>>", lambda e: edit_order_music())
     else:
         list_box.bind("<<ListboxSelect>>", lambda e: play_on_click())
@@ -260,6 +260,8 @@ def exit_command():
     for widget in frame1.winfo_children():
         widget.destroy()
     lock_play_buttons("normal")
+    list_box.selection_clear(0, tk.END)
+    list_box.select_set(0)
     list_box.bind("<<ListboxSelect>>", lambda e: play_on_click())
 
 
@@ -274,7 +276,7 @@ def music_up():
                 current_playlist["songs"].insert(j - 1, os.path.basename(chased_elem))
                 rewrite_json()
                 rewrite_listbox()
-                rewrite_playlist()
+                playlist.current_track = playlist[0]
                 list_box.selection_clear(0, tk.END)
                 list_box.select_set(j - 1)
                 break
@@ -283,8 +285,6 @@ def music_up():
         playlist.append_left(LinkedListItem(Composition(chased_elem)))
         current_playlist["songs"].remove(os.path.basename(chased_elem))
         current_playlist["songs"].insert(0, os.path.basename(chased_elem))
-        rewrite_json()
-        rewrite_listbox()
         list_box.selection_clear(0, tk.END)
         list_box.select_set(0)
     else:
@@ -302,6 +302,7 @@ def music_down():
                 current_playlist["songs"].insert(j + 1, os.path.basename(chased_elem))
                 rewrite_json()
                 rewrite_listbox()
+                playlist.current_track = playlist[0]
                 list_box.selection_clear(0, tk.END)
                 list_box.select_set(j + 1)
                 break
