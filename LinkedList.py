@@ -1,9 +1,24 @@
+"""
+Данный модуль содержит класс LinkedList
+(Кольцевой двусвязный список)
+"""
+
+
 class LinkedList:
+    """
+    Данный класс содержит в себе все операции для работы с
+    кольцевыми двусвязными списками
+    """
     def __init__(self):
         self.start_node = None
         self.end_node = None
+        self.current = None
 
     def append_right(self, item):
+        """
+        Данный метод добавлет item в конец списка
+        :param item: LinkedListItem, который мы вставляем
+        """
         if self.start_node is None:
             self.start_node = item
         elif self.end_node is None:
@@ -20,9 +35,17 @@ class LinkedList:
             self.start_node.prev = self.end_node
 
     def append(self, item):
+        """
+        Данный метод работает как метод append_right
+        :param item: LinkedListItem, который мы вставляем
+        """
         self.append_right(item)
 
     def append_left(self, item):
+        """
+        Данный метод добавлет item в начало списка
+        :param item: LinkedListItem, который мы вставляем
+        """
         if self.end_node is None:
             self.end_node = item
         elif self.start_node is None:
@@ -39,8 +62,12 @@ class LinkedList:
             self.end_node.next = self.start_node
 
     def remove(self, item):
-        for i in range(0, len(self)):
-            check_elem = self[i]
+        """
+        Данный метод удаляет первый попавшийся в списке item
+        :param item: LinkedListItem, который мы удаляем
+        """
+        for elem in self:
+            check_elem = elem
             if check_elem == item:
                 if check_elem == self[0]:
                     if len(self) == 1:
@@ -61,6 +88,12 @@ class LinkedList:
     print("Данного элемента не существует")
 
     def insert(self, previous_index, item):
+        """
+        Данный метод добавлет item после LinkedList[previous_index]
+        :param item: LinkedListItem, который мы вставляем
+        :param previous_index: индекс элемента, после которого
+        мы вставляем item
+        """
         check_elem = self[previous_index]
         if len(self) == 1 and previous_index == 0:
             self.append(item)
@@ -73,6 +106,11 @@ class LinkedList:
         print("Элемент успешно добавлен")
 
     def _check_none(self):
+        """
+        Данный метод получает первый элемент в списке
+        (Первым может оказаться и end_node, если start_node is None)
+        :return: первый элемент в списке
+        """
         if self.start_node is not None and self.end_node is None:
             check_elem = self.start_node
         elif self.start_node is None and self.end_node is not None:
@@ -84,12 +122,15 @@ class LinkedList:
         return check_elem
 
     def last(self):
+        """
+        Данный метод получает последний элемент списка
+        :return: последний элемент в списке
+        """
         if len(self) >= 2:
             return self.end_node
-        elif len(self) == 1:
+        if len(self) == 1:
             return self.start_node
-        else:
-            return None
+        return None
 
     def __iter__(self):
         self.current = 0
@@ -103,7 +144,8 @@ class LinkedList:
             if node == self.start_node and self.end_node is None:
                 break
             node = node.next
-            if node == self.end_node and self.start_node is not None and self.end_node is not None:
+            if (node == self.end_node and self.start_node is not None
+                    and self.end_node is not None):
                 count += 1
                 break
         return count
@@ -112,17 +154,16 @@ class LinkedList:
         if self.current < len(self):
             self.current += 1
             return self[self.current - 1]
-        else:
-            raise StopIteration
+        raise StopIteration
 
     def __getitem__(self, index):
         i = 0
         check_elem = self._check_none()
         if index >= len(self) or index < -len(self):
             print("Вы используете недопустимый индекс!")
-            return
+            return None
         if check_elem is None:
-            return
+            return None
         if index >= 0:
             while i != index:
                 check_elem = check_elem.next
@@ -136,8 +177,8 @@ class LinkedList:
         return check_elem
 
     def __contains__(self, item):
-        for i in range(0, len(self)):
-            if self[i] == item:
+        for elem in self:
+            if elem == item:
                 return True
         return False
 

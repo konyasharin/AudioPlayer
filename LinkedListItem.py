@@ -1,4 +1,17 @@
+"""
+Данный модуль содержит класс LinkedListItem
+(элемент LinkedList)
+"""
+
+
 class LinkedListItem:
+    """
+    Данный класс содержит:
+    prev - ссылка на предыдущий элемент списка
+    next - ссылка на следующий элемент списка
+    track - данный элемент списка
+    метод __eq__ для сравнения двух LinkedListItem
+    """
     def __init__(self, item):
         self.track = item
         self._next = None
@@ -11,6 +24,10 @@ class LinkedListItem:
 
     @property
     def next(self):
+        """
+        Геттер _next
+        :return: _next
+        """
         return self._next
 
     @next.setter
@@ -19,6 +36,10 @@ class LinkedListItem:
 
     @property
     def prev(self):
+        """
+        Геттер _prev
+        :return: _prev
+        """
         return self._prev
 
     @prev.setter
