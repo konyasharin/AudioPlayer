@@ -4,8 +4,6 @@ import tkinter as tk
 import pygame
 from PIL import Image, ImageTk  # Изменение размеров картинок
 from tkinter import filedialog
-
-from AudioPlayer import AudioPlayer
 from Composition import Composition
 from PlayList import PlayList
 from LinkedListItem import LinkedListItem
@@ -38,6 +36,9 @@ def stop():
 
 
 def play_on_click():
+    if list_box.size() == 0:
+        print("Плейлист пустой!")
+        return
     for item in playlist:
         if item.track.path == os.path.join(current_dir, "music", list_box.get(list_box.curselection())):
             playlist.current_track = item
@@ -108,7 +109,7 @@ def unpause_music():
 def reload_thread():
     global thread_flag
     global play_with_threading
-    print(threading.active_count())
+    print(threading.active_count())  # выводим в консоль количество потоков
     if threading.active_count() == 2:
         thread_flag = False
         play_with_threading.join()
@@ -145,7 +146,11 @@ def delete_music():
     list_box.delete(0, tk.END)
     for j in range(0, len(playlist)):
         list_box.insert(tk.END, current_playlist["songs"][j])
-    list_box.bind("<<ListboxSelect>>", lambda e: delete_on_click())
+    if list_box.size() > 0:
+        list_box.bind("<<ListboxSelect>>", lambda e: delete_on_click())
+    else:
+        menu.entryconfig("Меню", state="normal")
+        list_box.bind("<<ListboxSelect>>", lambda event: play_on_click())
 
 
 def delete_on_click():
@@ -229,8 +234,79 @@ def delete_playlist():
         print("Вы не можете удалить все плейлисты, сначала создайте другой плейлист, а потом можете удалить этот")
 
 
+def instruction_edit_order():
+    exit_command()
+    list_box.bind("<<ListboxSelect>>", lambda e: edit_order_music())
+    tk.Label(frame1, text="Выберите элемент").grid(row=0, column=0, padx=95)
+
+
 def edit_order_music():
-    print(23)
+    for widget in frame1.winfo_children():
+        if isinstance(widget, tk.Label):
+            widget.destroy()
+            break
+    if list_box.size() > 0:
+        tk.Button(frame1, text="Опустить вниз", command=music_down).grid(row=2, column=0, padx=35)
+        tk.Button(frame1, text="Прекратить изменение пордка песен", command=exit_command).grid(row=1, column=0, padx=35)
+        tk.Button(frame1, text="Поднять вверх", command=music_up).grid(row=0, column=0, padx=35)
+        stop()
+        lock_play_buttons("disabled")
+        list_box.bind("<<ListboxSelect>>", lambda e: edit_order_music())
+    else:
+        list_box.bind("<<ListboxSelect>>", lambda e: play_on_click())
+
+
+def exit_command():
+    for widget in frame1.winfo_children():
+        widget.destroy()
+    lock_play_buttons("normal")
+    list_box.bind("<<ListboxSelect>>", lambda e: play_on_click())
+
+
+def music_up():
+    chased_elem = os.path.join(current_dir, "music", list_box.get(list_box.curselection()))
+    if playlist[0].track.path != chased_elem and playlist[1].track.path != chased_elem:
+        for j in range(0, len(playlist)):
+            if playlist[j].track.path == chased_elem:
+                playlist.remove(LinkedListItem(Composition(chased_elem)))
+                playlist.insert(j - 2, LinkedListItem(Composition(chased_elem)))
+                current_playlist["songs"].remove(os.path.basename(chased_elem))
+                current_playlist["songs"].insert(j - 1, os.path.basename(chased_elem))
+                rewrite_json()
+                rewrite_listbox()
+                rewrite_playlist()
+                list_box.selection_clear(0, tk.END)
+                list_box.select_set(j - 1)
+                break
+    elif playlist[1] == LinkedListItem(Composition(chased_elem)):  # Нельзя сделать insert после -1 элемента
+        playlist.remove(LinkedListItem(Composition(chased_elem)))
+        playlist.append_left(LinkedListItem(Composition(chased_elem)))
+        current_playlist["songs"].remove(os.path.basename(chased_elem))
+        current_playlist["songs"].insert(0, os.path.basename(chased_elem))
+        rewrite_json()
+        rewrite_listbox()
+        list_box.selection_clear(0, tk.END)
+        list_box.select_set(0)
+    else:
+        print("Данный трек находится на самом верху, вы его не можете поднять больше!")
+
+
+def music_down():
+    chased_elem = os.path.join(current_dir, "music", list_box.get(list_box.curselection()))
+    if playlist[len(playlist) - 1].track.path != chased_elem:
+        for j in range(0, len(playlist)):
+            if playlist[j].track.path == chased_elem:
+                playlist.remove(LinkedListItem(Composition(chased_elem)))
+                playlist.insert(j, LinkedListItem(Composition(chased_elem)))
+                current_playlist["songs"].remove(os.path.basename(chased_elem))
+                current_playlist["songs"].insert(j + 1, os.path.basename(chased_elem))
+                rewrite_json()
+                rewrite_listbox()
+                list_box.selection_clear(0, tk.END)
+                list_box.select_set(j + 1)
+                break
+    else:
+        print("Данный трек находится в самом низу, вы его не можете опустить больше!")
 
 
 def rewrite_listbox():
@@ -257,7 +333,6 @@ if __name__ == "__main__":
     play_with_threading = Thread(target=play_music, daemon=True)
     playlist = PlayList()
     buttons = []
-    audio_player = AudioPlayer()
 
     # Создание главного окна
     root = tk.Tk()
@@ -268,6 +343,8 @@ if __name__ == "__main__":
 
     frame = tk.Frame(root)
     frame.place(relx=0.1, rely=0.7, relwidth=0.8, relheight=0.2)
+    frame1 = tk.Frame(root, bg="black")
+    frame1.place(relx=0.1, rely=0.45, relwidth=0.8, relheight=0.2)
 
     # Создание кнопок
     buttons.append(create_btn_with_image("images/back.png", 75, 0, 0, "back", prev_music))
@@ -285,7 +362,7 @@ if __name__ == "__main__":
     open_menu.add_command(label="Удалить данный плейлист", command=delete_playlist)
     open_menu.add_command(label="Выбрать другой плейлист", command=choose_playlist)
     open_menu.add_command(label="Изменить порядок песен",
-                          command=lambda: list_box.bind("<<ListboxSelect>>", lambda e: edit_order_music()))
+                          command=lambda: instruction_edit_order())
 
     list_box = tk.Listbox(root, width=47, height=10, selectbackground="gray", selectforeground="white",
                           selectmode=tk.SINGLE)
