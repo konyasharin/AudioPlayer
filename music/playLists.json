@@ -5,18 +5,16 @@
             "songs": [
                 "Peggy Gou - (It Goes Like) Nanana (Edit) (supermusic.me).mp3",
                 "bibi-babydoll-dj-brunin-xm-automotivo-bibi-fogosa-mp3.mp3",
-                "Dua Lipa - Dance The Night.mp3",
                 "nullzwei_JESUS_IN_BERLIN.mp3",
                 "Sound_24308.mp3"
             ]
         },
         {
-            "name": "test",
+            "name": "\u043d",
             "songs": [
-                "Peggy Gou - (It Goes Like) Nanana (Edit) (supermusic.me).mp3",
                 "Dua Lipa - Dance The Night.mp3"
             ]
         }
     ],
-    "current_playlist": "test"
+    "current_playlist": "123"
 }

@@ -46,9 +46,10 @@ class LinkedList:
         Данный метод добавлет item в начало списка
         :param item: LinkedListItem, который мы вставляем
         """
-        if self.end_node is None:
-            self.end_node = item
-        elif self.start_node is None:
+        if self.start_node is None:
+            self.start_node = item
+        elif self.end_node is None:
+            self.end_node = self.start_node
             self.start_node = item
             self.start_node.next = self.end_node
             self.start_node.prev = self.end_node

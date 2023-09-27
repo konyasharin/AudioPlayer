@@ -16,9 +16,9 @@ import json
 import shutil  # работа с копированием файлов
 import threading
 from threading import Thread  # Для использования потоков
+# (для работы GUI и программы нужны отдельные потоки)
 import tkinter as tk
 from tkinter import filedialog
-# (для работы GUI и программы нужны отдельные потоки)
 from tkinter import simpledialog
 import pygame
 from PIL import Image, ImageTk  # Изменение размеров картинок
