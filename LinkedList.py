@@ -2,6 +2,7 @@
 Данный модуль содержит класс LinkedList
 (Кольцевой двусвязный список)
 """
+from LinkedListItem import LinkedListItem
 
 
 class LinkedList:
@@ -9,10 +10,12 @@ class LinkedList:
     Данный класс содержит в себе все операции для работы с
     кольцевыми двусвязными списками
     """
+
     def __init__(self):
         self.start_node = None
         self.end_node = None
         self.current = None
+        self.length = 0
 
     def append_right(self, item):
         """
@@ -33,6 +36,7 @@ class LinkedList:
             self.end_node = item
             self.end_node.prev.next = self.end_node
             self.start_node.prev = self.end_node
+        self.length += 1
 
     def append(self, item):
         """
@@ -61,6 +65,7 @@ class LinkedList:
             self.start_node = item
             self.start_node.next.prev = self.start_node
             self.end_node.next = self.start_node
+        self.length += 1
 
     def remove(self, item):
         """
@@ -68,25 +73,31 @@ class LinkedList:
         :param item: LinkedListItem, который мы удаляем
         """
         for elem in self:
-            check_elem = elem
-            if check_elem == item:
-                if check_elem == self[0]:
-                    if len(self) == 1:
-                        self.start_node = None
-                    else:
-                        self.start_node = check_elem.next
-                elif check_elem == self[len(self) - 1]:
-                    if len(self) == 1:
-                        self.end_node = None
-                    else:
-                        self.end_node = check_elem.prev
-                if check_elem.prev is not None:
-                    check_elem.prev.next = check_elem.next
-                if check_elem.next is not None:
-                    check_elem.next.prev = check_elem.prev
+            if elem == item:
+                if len(self) == 1:
+                    self.start_node = None
+                elif elem == self.start_node:
+                    self.start_node = self.start_node.next
+                    self.start_node.prev = self.end_node
+                    if len(self) > 1:
+                        self.end_node.next = self.start_node
+                elif elem == self.end_node:
+                    self.end_node = self.end_node.prev
+                    self.end_node.next = self.start_node
+                    if len(self) > 1:
+                        self.start_node.prev = self.end_node
+                else:
+                    elem.prev.next = elem.next
+                    elem.next.prev = elem.prev
+                if (self.start_node is self.end_node and
+                        self.start_node is not None):
+                    self.end_node = None
+                    self.start_node.next = None
+                    self.start_node.prev = None
                 print("Элемент успешно удален")
+                self.length -= 1
                 return
-    print("Данного элемента не существует")
+        print("Данного элемента не существует")
 
     def insert(self, previous_index, item):
         """
@@ -105,22 +116,7 @@ class LinkedList:
         if check_elem == self[len(self) - 1]:
             self.end_node = item
         print("Элемент успешно добавлен")
-
-    def _check_none(self):
-        """
-        Данный метод получает первый элемент в списке
-        (Первым может оказаться и end_node, если start_node is None)
-        :return: первый элемент в списке
-        """
-        if self.start_node is not None and self.end_node is None:
-            check_elem = self.start_node
-        elif self.start_node is None and self.end_node is not None:
-            check_elem = self.end_node
-        elif self.start_node is None and self.end_node is None:
-            return None
-        else:
-            check_elem = self.start_node
-        return check_elem
+        self.length += 1
 
     def last(self):
         """
@@ -134,12 +130,12 @@ class LinkedList:
         return None
 
     def __iter__(self):
-        self.current = 0
+        self.current = self.start_node
         return self
 
     def __len__(self):
         count = 0
-        node = self._check_none()
+        node = self.start_node
         while node:
             count += 1
             if node == self.start_node and self.end_node is None:
@@ -152,14 +148,18 @@ class LinkedList:
         return count
 
     def __next__(self):
-        if self.current < len(self):
-            self.current += 1
-            return self[self.current - 1]
-        raise StopIteration
+        if self.current is None:
+            raise StopIteration
+        data = self.current
+        if self.current == self.end_node:
+            self.current = None
+        else:
+            self.current = self.current.next
+        return data
 
     def __getitem__(self, index):
         i = 0
-        check_elem = self._check_none()
+        check_elem = self.start_node
         if index >= len(self) or index < -len(self):
             print("Вы используете недопустимый индекс!")
             return None
@@ -184,5 +184,28 @@ class LinkedList:
         return False
 
     def __reversed__(self):
-        for i in range(-1, -len(self) - 1, -1):
-            yield self[i]
+        check_node = self.last()
+        while check_node != self.start_node:
+            yield check_node
+            check_node = check_node.prev
+        if len(self) > 0:
+            yield check_node
+
+
+if __name__ == "__main__":
+    linked_list = LinkedList()
+    linked_list.append(LinkedListItem(3))
+    linked_list.append(LinkedListItem(10))
+
+    print(len(linked_list))
+    print(linked_list.start_node)
+    print(linked_list.end_node)
+    linked_list.remove(LinkedListItem(3))
+    print(len(linked_list))
+
+    for e in linked_list:
+        print(e.next)
+        print(e.prev)
+        print(e)
+        print(linked_list.start_node)
+        print(linked_list.end_node)

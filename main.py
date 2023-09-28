@@ -22,6 +22,8 @@ from tkinter import filedialog
 from tkinter import simpledialog
 import pygame
 from PIL import Image, ImageTk  # Изменение размеров картинок
+
+from App import App
 from Composition import Composition
 from PlayList import PlayList
 from LinkedListItem import LinkedListItem
@@ -35,18 +37,18 @@ def play_music():
     """
     buttons[1] = create_btn_with_image("images/pause.png",
                                        75, 0, 1, "pause", pause_music)
-    global_variables["thread_flag"] = True
-    pygame.mixer.music.load(playlist.current_track.track.path)
+    app.thread_flag = True
+    pygame.mixer.music.load(app.playlist.current_track.track.path)
     pygame.mixer.music.play()
-    while ((pygame.mixer.music.get_busy() or global_variables["is_pause"])
-           and global_variables["thread_flag"]):
+    while ((pygame.mixer.music.get_busy() or app.is_pause)
+           and app.thread_flag):
         pygame.time.Clock().tick(5)
-    if global_variables["thread_flag"]:
+    if app.thread_flag:
         # Если это происходит на втором потоке,
         # который и так работает отдельно от GUI
         next_highlight()
-        if len(playlist) > 1:
-            playlist.current_track = playlist.current_track.next
+        if len(app.playlist) > 1:
+            app.playlist.current_track = app.playlist.current_track.next
         play_music()
 
 
@@ -59,7 +61,7 @@ def stop():
     buttons[1] = (
         create_btn_with_image("images/play.png", 75, 0, 1, "play",
                               lambda:
-                              global_variables["play_with_threading"].start()
+                              app.play_with_threading.start()
                               )
     )
 
@@ -71,13 +73,13 @@ def play_on_click():
     if list_box.size() == 0:
         print("Плейлист пустой!")
         return
-    for item in playlist:
+    for item in app.playlist:
         if (item.track.path ==
                 os.path.join(current_dir,
                              "music", list_box.get(list_box.curselection()))):
-            playlist.current_track = item
+            app.playlist.current_track = item
     reload_thread()
-    global_variables["play_with_threading"].start()
+    app.play_with_threading.start()
 
 
 def next_highlight():
@@ -85,11 +87,11 @@ def next_highlight():
     Данный метод перемещает выделение на следующую композицию
     """
     for curselection in list_box.curselection():
-        if (playlist.current_track.track.path ==
+        if (app.playlist.current_track.track.path ==
                 os.path.join(current_dir,
                              "music", list_box.get(curselection))):
             list_box.selection_clear(0, tk.END)
-            if curselection + 1 >= len(playlist):
+            if curselection + 1 >= len(app.playlist):
                 list_box.select_set(0)
             else:
                 list_box.select_set(curselection + 1)
@@ -100,12 +102,12 @@ def prev_highlight():
     Данный метод перемещает выделение на предыдущую композицию
     """
     for curselection in list_box.curselection():
-        if (playlist.current_track.track.path ==
+        if (app.playlist.current_track.track.path ==
                 os.path.join(current_dir,
                              "music", list_box.get(curselection))):
             list_box.selection_clear(0, tk.END)
             if curselection - 1 < 0:
-                list_box.select_set(len(playlist) - 1)
+                list_box.select_set(len(app.playlist) - 1)
             else:
                 list_box.select_set(curselection - 1)
 
@@ -116,10 +118,10 @@ def next_music():
     после того, как пользователь нажа на кнопку 'далее'
     """
     next_highlight()
-    if len(playlist) > 1:
-        playlist.current_track = playlist.current_track.next
+    if len(app.playlist) > 1:
+        app.playlist.current_track = app.playlist.current_track.next
     reload_thread()
-    global_variables["play_with_threading"].start()
+    app.play_with_threading.start()
 
 
 def prev_music():
@@ -128,10 +130,10 @@ def prev_music():
     после того, как пользователь нажа на кнопку 'назад'
     """
     prev_highlight()
-    if len(playlist) > 1:
-        playlist.current_track = playlist.current_track.prev
+    if len(app.playlist) > 1:
+        app.playlist.current_track = app.playlist.current_track.prev
     reload_thread()
-    global_variables["play_with_threading"].start()
+    app.play_with_threading.start()
 
 
 def create_btn_with_image(path, size, row, column, name, func):
@@ -158,7 +160,7 @@ def pause_music():
     """
     Данный метод ставит музыку на паузу
     """
-    global_variables["is_pause"] = True
+    app.is_pause = True
     pygame.mixer.music.pause()
     buttons[1] = create_btn_with_image("images/play.png",
                                        75, 0, 1, "play", unpause_music)
@@ -168,7 +170,7 @@ def unpause_music():
     """
     Данный метод возобновляет музыку с паузы
     """
-    global_variables["is_pause"] = False
+    app.is_pause = False
     pygame.mixer.music.unpause()
     buttons[1] = create_btn_with_image("images/pause.png",
                                        75, 0, 1, "pause", pause_music)
@@ -182,9 +184,9 @@ def reload_thread():
     print(f"Число активных потоков в данный момент:"
           f" {threading.active_count()}")
     if threading.active_count() == 2:
-        global_variables["thread_flag"] = False
-        global_variables["play_with_threading"].join()
-        global_variables["play_with_threading"] = (
+        app.thread_flag = False
+        app.play_with_threading.join()
+        app.play_with_threading = (
             Thread(target=play_music, daemon=True))
 
 
@@ -200,16 +202,15 @@ def add_music():
                                    "music", os.path.basename(file_path))
         if not os.path.exists(output_path):
             shutil.copy(file_path, output_path)
-        if not (os.path.basename(file_path) in
-                global_variables["current_playlist"]["songs"]):
-            playlist.append(LinkedListItem(Composition(output_path)))
-            (global_variables["current_playlist"]["songs"].
-             append(os.path.basename(file_path)))
+        if (LinkedListItem(Composition(output_path))
+                not in app.playlist):
+            app.playlist.append(LinkedListItem(Composition(output_path)))
+            app.playlist.current_track = app.playlist[0]
             rewrite_json()
             rewrite_listbox()
-            rewrite_playlist()
+            list_box.selection_set(0)
             stop()
-            if len(playlist) >= 1:
+            if len(app.playlist) >= 1:
                 lock_play_buttons("normal")
         else:
             print("Данная песня уже есть в плейлисте")
@@ -222,10 +223,6 @@ def delete_music():
     stop()
     lock_play_buttons("disabled")
     menu.entryconfig("Меню", state="disabled")
-    list_box.delete(0, tk.END)
-    for j in range(0, len(playlist)):
-        list_box.insert(tk.END,
-                        global_variables["current_playlist"]["songs"][j])
     if list_box.size() > 0:
         list_box.bind("<<ListboxSelect>>", lambda e: delete_on_click())
     else:
@@ -239,19 +236,19 @@ def delete_on_click():
     """
     file_path = list_box.get(list_box.curselection())
     output_path = os.path.join(current_dir, "music", file_path)
-    playlist.remove(LinkedListItem(Composition(output_path)))
-    global_variables["current_playlist"]["songs"].remove(file_path)
+    app.playlist.remove(LinkedListItem(Composition(output_path)))
     rewrite_json()
     rewrite_listbox()
-    rewrite_playlist()
     list_box.bind("<<ListboxSelect>>", lambda event: play_on_click())
-    if len(playlist) >= 1:
+    if len(app.playlist) >= 1:
         lock_play_buttons("normal")
+        app.playlist.current_track = app.playlist[0]
+        list_box.selection_set(0)
     menu.entryconfig("Меню", state="normal")
     flag = False
     # Удаление песни из папки если она не используется в плейлистах
-    for check_playlist in playlists:
-        if file_path in check_playlist["songs"]:
+    for check_playlist in app.playlists:
+        if LinkedListItem(Composition(output_path)) in check_playlist:
             flag = True
             break
     if not flag:
@@ -273,8 +270,14 @@ def rewrite_json():
     """
     with open(os.path.join(current_dir, "music", "playLists.json"),
               "w", encoding="utf-8") as file:
-        data = {"playlists": playlists,
-                "current_playlist": global_variables["current_playlist_name"]}
+        playlists_json = []
+        for elem in app.playlists:
+            songs = []
+            for music in elem:
+                songs.append(os.path.basename(music.track.path))
+            playlists_json.append({"name": elem.name, "songs": songs})
+        data = {"playlists": playlists_json,
+                "current_playlist": app.playlist.name}
         json.dump(data, file, indent=4)
 
 
@@ -285,7 +288,7 @@ def create_playlist():
     playlist_name = simpledialog.askstring(
         "Введите данные", "Введите название для нового плейлиста")
     if playlist_name:
-        playlists.append({"name": playlist_name, "songs": []})
+        app.playlists.append(PlayList(playlist_name))
         rewrite_json()
 
 
@@ -298,8 +301,8 @@ def choose_playlist():
     lock_play_buttons("disabled")
     menu.entryconfig("Меню", state="disabled")
     list_box.delete(0, tk.END)
-    for check_playlist in playlists:
-        list_box.insert(tk.END, check_playlist["name"])
+    for check_playlist in app.playlists:
+        list_box.insert(tk.END, check_playlist.name)
     list_box.bind("<<ListboxSelect>>", lambda e: on_select_playlist())
 
 
@@ -307,18 +310,16 @@ def on_select_playlist():
     """
     Данный метод открывает плейлист по которому было произведено нажатие
     """
-    global_variables["current_playlist_name"] = \
-        list_box.get(list_box.curselection())
-    for check_playlist in playlists:
-        if check_playlist["name"] == global_variables["current_playlist_name"]:
-            global_variables["current_playlist"] = check_playlist
-            break
+    for elem in app.playlists:
+        if elem.name == list_box.get(list_box.curselection()):
+            app.playlist = elem
+    app.playlist.current_track = app.playlist[0]
     rewrite_json()
     rewrite_listbox()
-    rewrite_playlist()
+    list_box.selection_set(0)
     list_box.bind("<<ListboxSelect>>", lambda e: play_on_click())
     menu.entryconfig("Меню", state="normal")
-    if len(playlist) < 1:
+    if len(app.playlist) < 1:
         lock_play_buttons("disabled")
     else:
         lock_play_buttons("normal")
@@ -328,8 +329,8 @@ def delete_playlist():
     """
     Данный метод удаляет текущий плейлист
     """
-    if len(playlists) > 1:
-        playlists.remove(global_variables["current_playlist"])
+    if len(app.playlists) > 1:
+        app.playlists.remove(app.playlist)
         rewrite_json()
         choose_playlist()
     else:
@@ -389,31 +390,25 @@ def music_up():
     """
     chased_elem = os.path.join(current_dir,
                                "music", list_box.get(list_box.curselection()))
-    if (playlist[0].track.path != chased_elem
-            and playlist[1].track.path != chased_elem):
-        for j, check_track in enumerate(playlist):
+    if (app.playlist[0].track.path != chased_elem
+            and app.playlist[1].track.path != chased_elem):
+        for j, check_track in enumerate(app.playlist):
             if check_track.track.path == chased_elem:
-                playlist.remove(LinkedListItem(Composition(chased_elem)))
-                playlist.insert(j - 2,
-                                LinkedListItem(Composition(chased_elem)))
-                (global_variables["current_playlist"]["songs"].
-                 remove(os.path.basename(chased_elem)))
-                (global_variables["current_playlist"]["songs"].
-                 insert(j - 1, os.path.basename(chased_elem)))
+                app.playlist.remove(LinkedListItem(Composition(chased_elem)))
+                app.playlist.insert(j - 2,
+                                    LinkedListItem(Composition(chased_elem)))
                 rewrite_json()
                 rewrite_listbox()
-                playlist.current_track = playlist[0]
+                app.playlist.current_track = app.playlist[0]
                 list_box.selection_clear(0, tk.END)
                 list_box.select_set(j - 1)
                 break
     # Нельзя сделать insert после -1 элемента
-    elif playlist[1] == LinkedListItem(Composition(chased_elem)):
-        playlist.remove(LinkedListItem(Composition(chased_elem)))
-        playlist.append_left(LinkedListItem(Composition(chased_elem)))
-        (global_variables["current_playlist"]["songs"].
-         remove(os.path.basename(chased_elem)))
-        (global_variables["current_playlist"]["songs"].
-         insert(0, os.path.basename(chased_elem)))
+    elif app.playlist[1] == LinkedListItem(Composition(chased_elem)):
+        app.playlist.remove(LinkedListItem(Composition(chased_elem)))
+        app.playlist.append_left(LinkedListItem(Composition(chased_elem)))
+        rewrite_json()
+        rewrite_listbox()
         list_box.selection_clear(0, tk.END)
         list_box.select_set(0)
     else:
@@ -427,18 +422,15 @@ def music_down():
     """
     chased_elem = os.path.join(current_dir,
                                "music", list_box.get(list_box.curselection()))
-    if playlist[len(playlist) - 1].track.path != chased_elem:
-        for j, check_track in enumerate(playlist):
+    if app.playlist[len(app.playlist) - 1].track.path != chased_elem:
+        for j, check_track in enumerate(app.playlist):
             if check_track.track.path == chased_elem:
-                playlist.remove(LinkedListItem(Composition(chased_elem)))
-                playlist.insert(j, LinkedListItem(Composition(chased_elem)))
-                (global_variables["current_playlist"]["songs"].
-                 remove(os.path.basename(chased_elem)))
-                (global_variables["current_playlist"]["songs"].
-                 insert(j + 1, os.path.basename(chased_elem)))
+                app.playlist.remove(LinkedListItem(Composition(chased_elem)))
+                app.playlist.insert(j,
+                                    LinkedListItem(Composition(chased_elem)))
                 rewrite_json()
                 rewrite_listbox()
-                playlist.current_track = playlist[0]
+                app.playlist.current_track = app.playlist[0]
                 list_box.selection_clear(0, tk.END)
                 list_box.select_set(j + 1)
                 break
@@ -452,37 +444,17 @@ def rewrite_listbox():
     Данный метод перезаписывает песни в списке в аудиоплеере
     """
     list_box.delete(0, tk.END)
-    for j in range(0, len(global_variables["current_playlist"]["songs"])):
+    for j in range(0, app.playlist.length):
         list_box.insert(tk.END,
-                        global_variables["current_playlist"]["songs"][j])
-
-
-def rewrite_playlist():
-    """
-    Данный метод перезаписывает текущий плейлист
-    + изменение текущего трека на нулевой
-    """
-    global playlist
-    playlist = PlayList()
-    for music in global_variables["current_playlist"]["songs"]:
-        playlist.append(LinkedListItem(
-            Composition(os.path.join(current_dir, "music", music))))
-    if len(playlist) != 0:
-        playlist.current_track = playlist[0]
-    list_box.select_set(0)
+                        os.path.basename(app.playlist[j].track.path))
 
 
 if __name__ == "__main__":
-    images = {}  # Сборщик мусора без хранения картинок их удалял
-    global_variables = {"thread_flag": False, "is_pause": False,
-                        "play_with_threading":
-                            Thread(target=play_music, daemon=True),
-                        "current_playlist": {"name": "", "songs": []},
-                        "current_playlist_name": ""}
     pygame.mixer.init()
-    playlist = PlayList()
+    app = App()
+    app.play_with_threading = Thread(target=play_music, daemon=True)
     buttons = []
-
+    images = {}
     # Создание главного окна
     root = tk.Tk()
     root['bg'] = '#000000'
@@ -501,7 +473,7 @@ if __name__ == "__main__":
     buttons.append(
         create_btn_with_image(
             "images/play.png", 75, 0, 1, "play",
-            lambda: global_variables["play_with_threading"].start()
+            lambda: app.play_with_threading.start()
         )
     )
     buttons.append(create_btn_with_image("images/next.png",
@@ -535,18 +507,28 @@ if __name__ == "__main__":
     with open(os.path.join(current_dir, "music", "playLists.json"),
               "r", encoding="utf-8") as json_file:
         dictionary = json.load(json_file)
-        global_variables[("current_playlist"
-                          "_name")] = dictionary["current_playlist"]
+        app.playlist = PlayList(dictionary["current_playlist"])
         playlists = dictionary["playlists"]
         for playlist_check in playlists:
-            if playlist_check["name"] == global_variables[("current_playlist"
-                                                           "_name")]:
-                global_variables["current_playlist"] = playlist_check
-                break
+            if playlist_check["name"] == app.playlist.name:
+                for song in playlist_check["songs"]:
+                    app.playlist.append(
+                        LinkedListItem(Composition(
+                            os.path.join(current_dir, "music", song))))
+                app.playlists.append(app.playlist)
+            else:
+                playlist = PlayList(playlist_check["name"])
+                for song in playlist_check["songs"]:
+                    playlist.append(
+                        LinkedListItem(Composition(
+                            os.path.join(current_dir, "music", song))))
+                app.playlists.append(playlist)
     rewrite_listbox()
-    rewrite_playlist()
     list_box.bind("<<ListboxSelect>>", lambda event: play_on_click())
-    if len(playlist) < 1:
+    if len(app.playlist) < 1:
         lock_play_buttons("disabled")
+    else:
+        app.playlist.current_track = app.playlist[0]
+        list_box.selection_set(0)
 
     root.mainloop()

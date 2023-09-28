@@ -9,6 +9,7 @@ class PlayList(LinkedList):
     Данный класс наследуется от класса LinkedList
     и хранит также в себе текущий трек
     """
-    def __init__(self):
+    def __init__(self, name):
         super().__init__()
         self.current_track = None
+        self.name = name
